@@ -59,3 +59,79 @@ class UI {
     }, 3000);
   }
 }
+//store class: handles storage
+class Store {
+  static getBooks() {
+    let books;
+    if (localStorage.getItem("books") === null) {
+      books = [];
+    } else {
+      books = JSON.parse(localStorage.getItem("books"));
+    }
+    return books;
+  }
+
+  static addBook(book) {
+    const books = Store.getBooks();
+    books.push(book);
+    localStorage.setItem("books", JSON.stringify(books));
+  }
+
+  static removeBook(isbn) {
+    const books = Store.getBooks();
+    books.forEach((book, i) => {
+      if (book.isbn === isbn) {
+        books.splice(i, 1);
+      }
+    });
+    localStorage.setItem("books", JSON.stringify(books));
+  }
+}
+
+//event: display books
+document.addEventListener("DOMContentLoaded", UI.displayBooks);
+
+//event: add book
+// It seems that document.querySelector("#book-form")
+// is returning null because it executes before the DOM fully loads.
+//using window.onload it seems to be fixed
+
+document.querySelector("#book-form").addEventListener("submit", e => {
+  // Prevent actual submit
+  e.preventDefault();
+
+  // Get form values
+  const title = document.querySelector("#title").value;
+  const author = document.querySelector("#author").value;
+  const isbn = document.querySelector("#isbn").value;
+
+  //validate
+  if (title === "" || author === "" || isbn === "") {
+    UI.showAlert("Please fill in all fields", "danger");
+  } else {
+    const book = new Book(title, author, isbn);
+    // console.log(book);
+
+    //add book to UI
+    UI.addBookToList(book);
+    //add book to store
+    Store.addBook(book);
+
+    //clear fields
+    UI.clearFields();
+    UI.showAlert("Success", "success");
+  }
+});
+
+//event: remove book
+//use event propagation
+document.querySelector("#book-list").addEventListener("click", e => {
+  const bookToDelete = e.target;
+
+  //remove book from UI
+  UI.deleteBook(bookToDelete);
+
+  //remove book from Store
+  Store.removeBook(bookToDelete.parentElement.previousElementSibling.innerText);
+  UI.showAlert("Book Removed", "success");
+});
